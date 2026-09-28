@@ -65,13 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const animateCounter = (el) => {
     const target = parseInt(el.dataset.count, 10) || 0;
     const duration = 1400;
+    const fmt = (n) => (el.hasAttribute('data-plain') ? String(n) : n.toLocaleString('en-IN'));
     const start = performance.now();
     const step = (now) => {
       const progress = Math.min((now - start) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      el.textContent = Math.round(eased * target).toLocaleString('en-IN');
+      el.textContent = fmt(Math.round(eased * target));
       if (progress < 1) requestAnimationFrame(step);
-      else el.textContent = target.toLocaleString('en-IN');
+      else el.textContent = fmt(target);
     };
     requestAnimationFrame(step);
   };
@@ -253,6 +254,23 @@ document.addEventListener('DOMContentLoaded', () => {
       testimonialDots.appendChild(dot);
     });
     const dotEls = Array.from(testimonialDots.children);
+    const prevBtn = document.getElementById('testimonialPrev');
+    const nextBtn = document.getElementById('testimonialNext');
+    const stepSize = () => {
+      const card = testimonialRow.children[0];
+      const gap = parseFloat(getComputedStyle(testimonialRow).columnGap) || 22;
+      return card ? card.getBoundingClientRect().width + gap : 300;
+    };
+    const updateArrows = () => {
+      const max = testimonialRow.scrollWidth - testimonialRow.clientWidth - 4;
+      prevBtn.disabled = testimonialRow.scrollLeft <= 4;
+      nextBtn.disabled = testimonialRow.scrollLeft >= max;
+    };
+    prevBtn.addEventListener('click', () => testimonialRow.scrollBy({ left: -stepSize(), behavior: 'smooth' }));
+    nextBtn.addEventListener('click', () => testimonialRow.scrollBy({ left: stepSize(), behavior: 'smooth' }));
+    testimonialRow.addEventListener('scroll', updateArrows, { passive: true });
+    window.addEventListener('resize', updateArrows);
+    updateArrows();
     let scrollTimeout;
     testimonialRow.addEventListener('scroll', () => {
       clearTimeout(scrollTimeout);
